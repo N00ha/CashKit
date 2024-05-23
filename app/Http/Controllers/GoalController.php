@@ -17,7 +17,27 @@ class GoalController extends Controller
         if ($goals->isEmpty()) {
             return response()->json(['message' => 'You have not set any goals yet!'], 404);
         }
-        return response()->json($goals);
+        $data = [];
+        foreach ($goals as $goal) {
+            $start = $goal->start;
+            $startDate = Carbon::parse($start);
+            $now = Carbon::now();
+            $diffInMonths = $startDate->diffInMonths($now);
+            $budget = $goal->budget;
+            $end = $goal->end;
+            $endDate = Carbon::parse($end);
+            $period = $startDate->diffInMonths($endDate);
+            $savingNeed = intval($budget / $period);
+            $total_save = $savingNeed * $period;
+
+            $data[] = [
+                'goal' => $goal,
+                'diffInMonths' => $diffInMonths,
+                'total_save' => $total_save
+            ];
+        }
+
+        return response()->json($data);
     }
     public function store(Request $request)
     {
@@ -47,14 +67,22 @@ class GoalController extends Controller
 
         if ($savingNeed > $saveAmount)
         {
-            return response()->json(["message" => "This Goal is invalid. You need to increase your saving amount or extend the end date."]);
+            return response()->json(["message" => "The amount of money required to achieve your goal exceeds the amount in saving box"]);
         }
 
         $question->saving -= $savingNeed;
         $question->save();
         Goal::create(array_merge($requestData, ['user_id' => $userId]));
+        $data = [];
+        $data[] = [
+            "status" => "Your goal is added successfully",
+            "you need to save " => $savingNeed. " EGP per month",
+            "you will achieve your goal after: " => $period. " months",
+            "Your remaining save amount is " => $question->saving. " EGP"
+        ];
         return response()->json([
-            'message' => 'Your Goal was created successfully. You need to save '.$savingNeed.' per month to achieve your goal after '.$period.' months. Your remaining save amount is '.$question->saving,
+            $data,
+//            'message' => 'Your Goal was created successfully. You need to save '.$savingNeed.' per month to achieve your goal after '.$period.' months. Your remaining save amount is '.$question->saving,
             'status' => 'success'
         ], 200);
     }

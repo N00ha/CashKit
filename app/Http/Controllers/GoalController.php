@@ -82,7 +82,6 @@ class GoalController extends Controller
         ];
         return response()->json([
             $data,
-//            'message' => 'Your Goal was created successfully. You need to save '.$savingNeed.' per month to achieve your goal after '.$period.' months. Your remaining save amount is '.$question->saving,
             'status' => 'success'
         ], 200);
     }
